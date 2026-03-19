@@ -158,3 +158,11 @@ python train.py
 - XGBoost — gradient boosting sınıflandırıcı
 - SHAP — model açıklanabilirlik
 - Matplotlib, Seaborn — görselleştirme
+
+---
+
+## Lisans
+
+Bu proje [Apache License 2.0](LICENSE) ile lisanslanmıştır.
+
+© 2026 Fırat Tuna Arslan, İclal Bülbül, Betül Büyükgedikli
