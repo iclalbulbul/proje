@@ -4,8 +4,10 @@ from preprocessing import preprocess_data
 from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall
 
 
-def load_data(file_path="../data/demo_final_dataset.csv"):
+def load_data(file_path=None):
     """Veriyi yükle"""
+    if file_path is None:
+        file_path = os.path.join(PROJECT_DIR, "data", "demo_final_dataset.csv")
     data = pd.read_csv(file_path)
     return data
 
@@ -52,10 +54,12 @@ def train_xgboost(X_train, y_train, X_test, y_test):
     return model
 
 
-def save_models(models, path="../models/"):
-    """Modelleri kaydet"""
+def save_models(models, path=None):
+    if path is None:
+        path = os.path.join(PROJECT_DIR, "models")
+    os.makedirs(path, exist_ok=True)
     for name, model in models.items():
-        joblib.dump(model, f"{path}{name}.pkl")
+        joblib.dump(model, os.path.join(path, f"{name}.pkl"))
 
 
 if __name__ == "__main__":
@@ -96,7 +100,7 @@ if __name__ == "__main__":
     evaluate_by_panel(xgb_model, X_test, y_test, panel_test)
 
     # SHAP analizi
-    shap_analysis(xgb_model, X_test)
+    shap_analysis(xgb_model, X_test, save_path=results_path)
 
     # Precision-Recall eğrisi
-    plot_precision_recall(xgb_model, X_test, y_test)
+    plot_precision_recall(xgb_model, X_test, y_test, save_path=results_path)

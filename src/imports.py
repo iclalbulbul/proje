@@ -11,3 +11,9 @@ from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix, precision
 import shap
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # src/ klasörü
+PROJECT_DIR = os.path.dirname(BASE_DIR)  
+results_path = os.path.join(PROJECT_DIR, "results")
+os.makedirs(results_path, exist_ok=True)
