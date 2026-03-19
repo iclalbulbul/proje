@@ -1,7 +1,7 @@
 #model eğitim scripti
 from imports import *
 from preprocessing import preprocess_data
-from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall
+from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall, optimize_threshold
 
 
 def load_data(file_path=None):
@@ -126,6 +126,12 @@ if __name__ == "__main__":
 
     # Precision-Recall eğrisi
     plot_precision_recall(xgb_model, X_test, y_test, save_path=results_path)
+    
+    # Eşik optimizasyonu
+    print("=" * 50)
+    print("EŞİK OPTİMİZASYONU")
+    print("=" * 50)
+    best_threshold = optimize_threshold(xgb_model, X_test, y_test)
     
     #farklı bir splitle sonuc degisir mi?
     print("=" * 50)

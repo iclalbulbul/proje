@@ -55,3 +55,31 @@ def plot_precision_recall(model, X_test, y_test, save_path=None):
         if save_path:
             plt.savefig(os.path.join(save_path, "precision_recall_curve.png"), dpi=300, bbox_inches='tight')
         plt.show()
+        
+def optimize_threshold(model, X_test, y_test, save_path=None):
+    """Yüksek recall öncelikli eşik seçimi"""
+    y_proba = model.predict_proba(X_test)[:, 1]
+    precision, recall, thresholds = precision_recall_curve(y_test, y_proba)
+    
+    # Recall >= 0.90 olan eşikler arasında en yüksek F1'i bul
+    f1_scores = 2 * (precision * recall) / (precision + recall + 1e-8)
+    
+    # Recall en az 0.90 olsun (klinik bağlam: hasta atlanmasın)
+    mask = recall[:-1] >= 0.90
+    if mask.any():
+        best_idx = np.argmax(f1_scores[:-1][mask])
+        best_threshold = thresholds[mask][best_idx]
+    else:
+        best_idx = np.argmax(f1_scores[:-1])
+        best_threshold = thresholds[best_idx]
+    
+    y_pred_custom = (y_proba >= best_threshold).astype(int)
+    
+    print(f"Seçilen eşik: {best_threshold:.4f}")
+    print(f"Bu eşikle F1:     {f1_score(y_test, y_pred_custom):.4f}")
+    print(f"Bu eşikle Recall: {(y_pred_custom[y_test == 1].sum() / (y_test == 1).sum()):.4f}")
+    print(f"Bu eşikle Precision: {(y_test[y_pred_custom == 1].sum() / y_pred_custom.sum()):.4f}")
+    print(f"\nClassification Report (eşik={best_threshold:.4f}):")
+    print(classification_report(y_test, y_pred_custom))
+    
+    return best_threshold
