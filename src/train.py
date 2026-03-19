@@ -60,6 +60,28 @@ def save_models(models, path=None):
     os.makedirs(path, exist_ok=True)
     for name, model in models.items():
         joblib.dump(model, os.path.join(path, f"{name}.pkl"))
+        
+def cross_validate_model(X, y):
+    """5-fold stratified cross-validation"""
+    scale_weight = (y == 0).sum() / (y == 1).sum()
+    
+    model = xgb.XGBClassifier(
+        n_estimators=300,
+        max_depth=6,
+        learning_rate=0.1,
+        scale_pos_weight=scale_weight,
+        eval_metric='logloss',
+        random_state=42
+    )
+    
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    f1_scores = cross_val_score(model, X, y, cv=cv, scoring='f1')
+    auc_scores = cross_val_score(model, X, y, cv=cv, scoring='roc_auc')
+    
+    print(f"F1  — Ortalama: {f1_scores.mean():.4f} ± {f1_scores.std():.4f}")
+    print(f"AUC — Ortalama: {auc_scores.mean():.4f} ± {auc_scores.std():.4f}")
+    
+    return f1_scores, auc_scores
 
 
 if __name__ == "__main__":
@@ -104,3 +126,9 @@ if __name__ == "__main__":
 
     # Precision-Recall eğrisi
     plot_precision_recall(xgb_model, X_test, y_test, save_path=results_path)
+    
+    #farklı bir splitle sonuc degisir mi?
+    print("=" * 50)
+    print("CROSS-VALIDATION (5-Fold)")
+    print("=" * 50)
+    cross_validate_model(X, y)

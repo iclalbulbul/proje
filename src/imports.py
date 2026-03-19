@@ -11,6 +11,7 @@ from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix, precision
 import shap
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # src/ klasörü
