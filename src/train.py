@@ -1,6 +1,6 @@
 #model eğitim scripti
 from imports import *
-import preprocessing
+from preprocessing import preprocess_data
 
 data = None
 
@@ -10,4 +10,5 @@ def load_data(file_path = "./data/demo_final_dataset.csv"):
     data = pd.read_csv(file_path)
     return data
 
-print(preprocessing.preprocess_data(load_data()).head())
+data = load_data()
+X, y, panel = preprocess_data(data)

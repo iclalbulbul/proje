@@ -21,6 +21,13 @@ def preprocess_data(data, target_col='label'):
     
     data = data.replace('-', np.nan)
     
+    force_numeric = ['cadd_phred', 'cadd_raw', 'revel', 'gnomad_af', 
+                 'gnomadg_af', 'alphamissense_score']
+    
+    for col in force_numeric:
+        if col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors='coerce')
+    
     if 'sift_score' in data.columns:
         data['sift_score'] = data['sift_score'].apply(extract_score)
     if 'polyphen_score' in data.columns:
@@ -31,9 +38,11 @@ def preprocess_data(data, target_col='label'):
             lambda x: pd.Series(split_amino_acids(x))
         )
         data = data.drop('amino_acids', axis=1)
+        
+    panel = data['panel'].copy() if 'panel' in data.columns else None
     
     drop_cols = [col for col in data.columns 
-                 if col in ['unique_id', 'codons', 'GeneSymbol'] 
+                 if col in ['unique_id', 'codons', 'GeneSymbol', 'sift_pred', 'polyphen_pred', 'panel'] 
                  or col.startswith('panel')]
     data = data.drop(columns=drop_cols, errors='ignore')
     
@@ -44,9 +53,9 @@ def preprocess_data(data, target_col='label'):
     X[numeric_cols] = X[numeric_cols].astype(float)
     
     for col in numeric_cols:
-        X[col].fillna(X[col].median(), inplace=True)
+        X[col] = X[col].fillna(X[col].median())
     
     categorical_cols = X.select_dtypes(include=['object']).columns
     X = pd.get_dummies(X, columns=categorical_cols, drop_first=True)
     
-    return X, y
+    return X, y, panel
