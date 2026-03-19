@@ -1,7 +1,7 @@
 #model eğitim scripti
 from imports import *
-from sklearn.linear_model import LogisticRegression
 from preprocessing import preprocess_data
+from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall
 
 
 def load_data(file_path="../data/demo_final_dataset.csv"):
@@ -59,11 +59,44 @@ def save_models(models, path="../models/"):
 
 
 if __name__ == "__main__":
+    # Veri yükleme ve ön işleme
     data = load_data()
     X, y, panel = preprocess_data(data)
     X_train, X_test, y_train, y_test, panel_train, panel_test = split_data(X, y, panel)
 
+    # Baseline modeller
     lr, rf = train_baseline(X_train, y_train)
+    
+    # XGBoost
     xgb_model = train_xgboost(X_train, y_train, X_test, y_test)
 
+    # Modelleri kaydet
     save_models({"lr_model": lr, "rf_model": rf, "xgb_model": xgb_model})
+
+    # === Değerlendirme ===
+    print("=" * 50)
+    print("LOGISTIC REGRESSION")
+    print("=" * 50)
+    evaluate_model(lr, X_test, y_test)
+
+    print("=" * 50)
+    print("RANDOM FOREST")
+    print("=" * 50)
+    evaluate_model(rf, X_test, y_test)
+
+    print("=" * 50)
+    print("XGBOOST")
+    print("=" * 50)
+    evaluate_model(xgb_model, X_test, y_test)
+
+    # Panel bazlı (sadece XGBoost — asıl model)
+    print("=" * 50)
+    print("XGBOOST — PANEL BAZLI")
+    print("=" * 50)
+    evaluate_by_panel(xgb_model, X_test, y_test, panel_test)
+
+    # SHAP analizi
+    shap_analysis(xgb_model, X_test)
+
+    # Precision-Recall eğrisi
+    plot_precision_recall(xgb_model, X_test, y_test)
