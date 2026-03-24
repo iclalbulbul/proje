@@ -9,6 +9,9 @@ def evaluate_model(model, X_test, y_test):
     print("Classification Report:")
     print(classification_report(y_test, y_pred))
     
+    mcc = matthews_corrcoef(y_test, y_pred)
+    print(f"MCC:     {mcc:.4f}")
+    
     if y_proba is not None:
         auc = roc_auc_score(y_test, y_proba)
         pr_auc = average_precision_score(y_test, y_proba)
@@ -18,14 +21,26 @@ def evaluate_model(model, X_test, y_test):
     return y_pred, y_proba
 
 def evaluate_by_panel(model, X_test, y_test, panel_test):
-    """Panel bazında değerlendirme"""
+    """Panel bazında değerlendirme — her panel için F1 ve MCC"""
     results = []
-    for panel in panel_test.unique():
+    print(f"\n{'Panel':20s} | {'F1':>6s} | {'MCC':>6s} | {'AUC-ROC':>7s} | {'n':>5s}")
+    print("-" * 55)
+    for panel in sorted(panel_test.unique()):
         idx = panel_test == panel
         if idx.sum() > 0:
-            print(f"\nEvaluating Panel: {panel}")
+            y_pred_p = model.predict(X_test[idx])
+            f1_p = f1_score(y_test[idx], y_pred_p)
+            mcc_p = matthews_corrcoef(y_test[idx], y_pred_p)
+            auc_p = roc_auc_score(y_test[idx], model.predict_proba(X_test[idx])[:, 1]) if hasattr(model, 'predict_proba') else 0
+            print(f"{panel:20s} | {f1_p:6.4f} | {mcc_p:6.4f} | {auc_p:7.4f} | {idx.sum():5d}")
+            results.append((panel, idx.sum(), f1_p, mcc_p, auc_p))
+    
+    # Detaylı rapor
+    for panel in sorted(panel_test.unique()):
+        idx = panel_test == panel
+        if idx.sum() > 0:
+            print(f"\n--- {panel} ---")
             evaluate_model(model, X_test[idx], y_test[idx])
-            results.append((panel, idx.sum()))
     return results
 
 def shap_analysis(model, X_data, save_path=None):
@@ -79,6 +94,7 @@ def optimize_threshold(model, X_test, y_test, save_path=None):
     
     print(f"Seçilen eşik: {best_threshold:.4f}")
     print(f"Bu eşikle F1:     {f1_score(y_test, y_pred_custom):.4f}")
+    print(f"Bu eşikle MCC:    {matthews_corrcoef(y_test, y_pred_custom):.4f}")
     print(f"Bu eşikle Recall: {(y_pred_custom[y_test == 1].sum() / (y_test == 1).sum()):.4f}")
     print(f"Bu eşikle Precision: {(y_test[y_pred_custom == 1].sum() / y_pred_custom.sum()):.4f}")
     print(f"\nClassification Report (eşik={best_threshold:.4f}):")

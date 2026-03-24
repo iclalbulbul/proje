@@ -4,12 +4,13 @@ from preprocessing import preprocess_data
 from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall, optimize_threshold, error_analysis
 
 
-def load_data(file_path=None):
-    """Veriyi yükle"""
-    if file_path is None:
-        file_path = os.path.join(PROJECT_DIR, "data", "demo_final_dataset.csv")
-    data = pd.read_csv(file_path)
-    return data
+def load_data():
+    """Eğitim ve test verilerini ayrı CSV'lerden yükle"""
+    train_path = os.path.join(PROJECT_DIR, "data", "final", "train_dataset.csv")
+    test_path = os.path.join(PROJECT_DIR, "data", "final", "test_dataset.csv")
+    train_data = pd.read_csv(train_path)
+    test_data = pd.read_csv(test_path)
+    return train_data, test_data
 
 
 def split_data(X, y, panel, test_size=0.2, random_state=42):
@@ -32,14 +33,12 @@ def train_baseline(X_train, y_train):
 
 
 def train_xgboost(X_train, y_train, X_test, y_test):
-    """XGBoost modeli — sınıf dengesizliği ve early stopping ile"""
-    scale_weight = (y_train == 0).sum() / (y_train == 1).sum()
-
+    """XGBoost modeli — asimetrik split için sabit scale_pos_weight"""
     model = xgb.XGBClassifier(
         n_estimators=300,
         max_depth=6,
         learning_rate=0.1,
-        scale_pos_weight=scale_weight,
+        scale_pos_weight=2.0,
         eval_metric='logloss',
         random_state=42,
         early_stopping_rounds=20
@@ -63,13 +62,11 @@ def save_models(models, path=None):
         
 def cross_validate_model(X, y):
     """5-fold stratified cross-validation"""
-    scale_weight = (y == 0).sum() / (y == 1).sum()
-    
     model = xgb.XGBClassifier(
         n_estimators=300,
         max_depth=6,
         learning_rate=0.1,
-        scale_pos_weight=scale_weight,
+        scale_pos_weight=2.0,
         eval_metric='logloss',
         random_state=42
     )
@@ -85,10 +82,13 @@ def cross_validate_model(X, y):
 
 
 if __name__ == "__main__":
-    # Veri yükleme ve ön işleme
-    data = load_data()
-    X, y, panel = preprocess_data(data)
-    X_train, X_test, y_train, y_test, panel_train, panel_test = split_data(X, y, panel)
+    # Veri yükleme ve ön işleme (ayrı train/test dosyaları)
+    train_data, test_data = load_data()
+    X_train, y_train, panel_train = preprocess_data(train_data)
+    X_test, y_test, panel_test = preprocess_data(test_data)
+    
+    # One-hot encoding sonrası sütunları hizala (train'de olan ama test'te olmayan sütunlar)
+    X_train, X_test = X_train.align(X_test, join='left', axis=1, fill_value=0)
 
     # Baseline modeller
     lr, rf = train_baseline(X_train, y_train)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     print("=" * 50)
     print("CROSS-VALIDATION (5-Fold)")
     print("=" * 50)
-    cross_validate_model(X, y)
+    cross_validate_model(X_train, y_train)
     
     # === Hata Analizi ===
     print("=" * 50)
