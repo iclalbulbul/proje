@@ -7,7 +7,7 @@ from sklearn.linear_model import LogisticRegression
 import xgboost as xgb
 import lightgbm as lgb
 import joblib
-from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix, precision_recall_curve, average_precision_score
+from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix, precision_recall_curve, average_precision_score, matthews_corrcoef
 import shap
 import matplotlib.pyplot as plt
 import seaborn as sns
