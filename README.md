@@ -33,7 +33,9 @@ proje/
 ├── results/
 │   ├── shap_global_feature_importance.png
 │   ├── shap_lokal_aciklama.png
-│   └── precision_recall_curve.png
+│   ├── precision_recall_curve.png
+│   ├── confusion_matrix.png
+│   └── confusion_matrix_panels.png
 ├── src/
 │   ├── imports.py                   # Ortak kütüphane import'ları
 │   ├── preprocessing.py             # Veri ön işleme fonksiyonları
@@ -67,20 +69,20 @@ proje/
 
 ### Model Karşılaştırması
 
-| Model | F1 (macro) | AUC-ROC |
-|-------|-----------|---------|
-| Logistic Regression | 0.84 | 0.92 |
-| Random Forest | 0.89 | 0.95 |
-| **XGBoost** | **0.90** | **0.96** |
+| Model | F1 (macro) | AUC-ROC | PR-AUC |
+|-------|-----------|---------|--------|
+| Logistic Regression | 0.84 | 0.92 | 0.92 |
+| Random Forest | 0.89 | 0.95 | 0.95 |
+| **XGBoost** | **0.90** | **0.96** | **0.96** |
 
 ### Panel Bazlı Performans (XGBoost)
 
-| Panel | F1 (patojenik) | AUC-ROC | Not |
-|-------|---------------|---------|-----|
-| Genel | 0.94 | 0.98 | En güçlü performans |
-| PAH | 0.81 | 0.94 | Küçük veri seti |
-| Herediter Kanser | 0.76 | 0.87 | En zorlu panel |
-| CFTR | 0.80 | 0.92 | Küçük veri seti |
+| Panel | F1 (patojenik) | AUC-ROC | PR-AUC | Not |
+|-------|---------------|---------|--------|-----|
+| Genel | 0.94 | 0.98 | 0.98 | En güçlü performans |
+| PAH | 0.81 | 0.94 | 0.93 | Küçük veri seti |
+| Herediter Kanser | 0.76 | 0.87 | 0.87 | En zorlu panel |
+| CFTR | 0.80 | 0.92 | 0.94 | Küçük veri seti |
 
 ### Cross-Validation (5-Fold)
 
@@ -95,6 +97,53 @@ Klinik bağlamda yanlış negatif (hasta varyantın atlanması) yanlış pozitif
   <img src="results/precision_recall_curve.png" alt="Precision-Recall Eğrisi" width="600"/>
 </p>
 <p align="center"><em>Precision-Recall eğrisi — farklı eşik değerlerinde precision ve recall dengesi</em></p>
+
+---
+
+## Hata Analizi
+
+XGBoost modelinin yanlış sınıfladığı örnekler detaylı incelenmiştir.
+
+**Genel Sonuçlar:** 605 test örneğinden 544'ü doğru (%89.9), 23 FP (benign → patojenik), 38 FN (patojenik → atlandı)
+
+### Panel Bazlı Hata Oranı
+
+| Panel | Toplam | Hata | Hata % | FP | FN |
+|-------|--------|------|--------|----:|----:|
+| Genel | 430 | 27 | 6.3% | 12 | 15 |
+| PAH | 46 | 10 | 21.7% | 9 | 1 |
+| Herediter Kanser | 96 | 18 | 18.8% | 2 | 16 |
+| CFTR | 33 | 6 | 18.2% | 0 | 6 |
+
+### Popülasyon Frekansına Göre Hata Dağılımı
+
+| gnomAD AF Aralığı | n | Hata | Hata % |
+|-------------------|-----|------|--------|
+| Çok nadir (<0.001) | 558 | 60 | 10.8% |
+| Nadir (0.001–0.01) | 35 | 1 | 2.9% |
+| Orta (0.01–0.05) | 5 | 0 | 0.0% |
+| Yaygın (>0.05) | 7 | 0 | 0.0% |
+
+Hataların büyük çoğunluğu çok nadir varyantlarda yoğunlaşmaktadır — bu varyantlar için popülasyon frekansı bilgisi sınırlı olduğundan model daha az bilgiyle karar vermek zorunda kalmaktadır.
+
+### In-Silico Skor Çelişkisi (SIFT vs REVEL)
+
+| Durum | n | Hata | Hata % |
+|-------|-----|------|--------|
+| Çelişkili | 101 | 10 | 9.9% |
+| Uyumlu | 504 | 51 | 10.1% |
+
+SIFT ve REVEL skorları arasındaki çelişki durumu, hata oranını belirgin şekilde artırmamaktadır — model, tek bir skora bağımlı kalmadan çoklu özellik kombinasyonlarını öğrenebilmektedir.
+
+<p align="center">
+  <img src="results/confusion_matrix.png" alt="Confusion Matrix" width="500"/>
+</p>
+<p align="center"><em>Genel confusion matrix — 23 FP, 38 FN</em></p>
+
+<p align="center">
+  <img src="results/confusion_matrix_panels.png" alt="Panel Bazlı Confusion Matrix" width="900"/>
+</p>
+<p align="center"><em>Panel bazlı confusion matrix — herediter kanser ve PAH panelleri en yüksek hata oranına sahip</em></p>
 
 ---
 
