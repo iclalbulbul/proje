@@ -1,7 +1,7 @@
 #model eğitim scripti
 from imports import *
 from preprocessing import preprocess_data
-from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall, optimize_threshold
+from evaluate import evaluate_model, evaluate_by_panel, shap_analysis, plot_precision_recall, optimize_threshold, error_analysis
 
 
 def load_data(file_path=None):
@@ -138,3 +138,9 @@ if __name__ == "__main__":
     print("CROSS-VALIDATION (5-Fold)")
     print("=" * 50)
     cross_validate_model(X, y)
+    
+    # === Hata Analizi ===
+    print("=" * 50)
+    print("HATA ANALİZİ")
+    print("=" * 50)
+    error_analysis(xgb_model, X_test, y_test, panel_test, save_path=results_path)
