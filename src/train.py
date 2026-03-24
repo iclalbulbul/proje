@@ -32,24 +32,30 @@ def train_baseline(X_train, y_train):
     return lr, rf
 
 
-def train_xgboost(X_train, y_train, X_test, y_test):
-    """XGBoost modeli — asimetrik split için sabit scale_pos_weight"""
+def train_xgboost(X_train, y_train, X_test=None, y_test=None):
+    """XGBoost modeli — eğitim verisinden validation split ile early stopping"""
+    # Eğitim verisinden %15 validation ayır (test verisi ASLA kullanılmaz)
+    X_tr, X_val, y_tr, y_val = train_test_split(
+        X_train, y_train, test_size=0.15, random_state=42, stratify=y_train
+    )
+
     model = xgb.XGBClassifier(
-        n_estimators=300,
+        n_estimators=500,
         max_depth=6,
-        learning_rate=0.1,
-        scale_pos_weight=2.0,
+        learning_rate=0.05,
+        scale_pos_weight=1.0,
         eval_metric='logloss',
         random_state=42,
-        early_stopping_rounds=20
+        early_stopping_rounds=30
     )
 
     model.fit(
-        X_train, y_train,
-        eval_set=[(X_test, y_test)],
+        X_tr, y_tr,
+        eval_set=[(X_val, y_val)],
         verbose=False
     )
 
+    print(f"XGBoost en iyi iterasyon: {model.best_iteration}")
     return model
 
 
@@ -66,7 +72,7 @@ def cross_validate_model(X, y):
         n_estimators=300,
         max_depth=6,
         learning_rate=0.1,
-        scale_pos_weight=2.0,
+        scale_pos_weight=1.0,
         eval_metric='logloss',
         random_state=42
     )
@@ -93,8 +99,8 @@ if __name__ == "__main__":
     # Baseline modeller
     lr, rf = train_baseline(X_train, y_train)
     
-    # XGBoost
-    xgb_model = train_xgboost(X_train, y_train, X_test, y_test)
+    # XGBoost (validation için train'in %15'i ayrılır, test KULLANILMAZ)
+    xgb_model = train_xgboost(X_train, y_train)
 
     # Modelleri kaydet
     save_models({"lr_model": lr, "rf_model": rf, "xgb_model": xgb_model})
