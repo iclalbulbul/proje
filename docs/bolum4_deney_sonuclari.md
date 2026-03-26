@@ -1,3 +1,10 @@
+> *Önemli Not:* Bu belgedeki sonuçlar asimetrik split 
+> koşullarında elde edilmiştir (asymmetric_split.py). 
+> Eğitim: 1809 örnek (1201P/608B), Test: 1212 örnek 
+> (300P/912B). CFTR (14P) ve Herediter Kanser (40P) 
+> panellerinde F1=0.00 asimetrik tasarımın matematiksel 
+> sonucudur, model başarısızlığı değildir.
+
 # 4. DENEY TASARIMI, SONUÇLAR VE İNCELEME
 
 ## 4.1 Deney Protokolü ve Veri Bölme
